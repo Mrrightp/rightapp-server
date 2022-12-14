@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -11,29 +12,39 @@ datasource db {
 }
 
 model User {
-  id                 Int         @id @default(autoincrement())
-  username           String      @unique
-  email              String      @unique
+  id                 Int              @id @default(autoincrement())
+  username           String           @unique
+  slug               String           @unique
+  email              String           @unique
   password           String
   refreshToken       String?
-  profileImgUrl      String?     @default("")
-  regDate            DateTime?   @default(now())
+  profileImgUrl      String?          @default("")
+  regDate            DateTime?        @default(now())
   ipAdress           String?
-  isAdmin            Boolean     @default(false)
-  topics             Topic[]     @relation("wrtten topics")
-  materials          Materials[] @relation("wrttenMaterials")
+  isAdmin            Boolean          @default(false)
+  topics             Topic[]          @relation("wrtten topics")
+  materials          Material[]       @relation("wrttenMaterials")
   topicsUserFollowed Topic[]
-  followedBy         Follows[]   @relation("following")
-  following          Follows[]   @relation("follower")
-  role               Role        @default(USER)
-  Faculty            Faculty?    @relation(fields: [facultyId], references: [id])
+  followedBy         Follow[]         @relation("following")
+  following          Follow[]         @relation("follower")
+  role               Role             @default(USER)
+  faculty            Faculty?         @relation(fields: [facultyId], references: [id])
   facultyId          Int?
-  department         Department? @relation(fields: [departmentId], references: [id])
+  department         Department?      @relation(fields: [departmentId], references: [id])
   departmentId       Int?
   bio                String?
+  likedTopics        Topiclike[]
+  likedComments      CommentLike[]
+  likedReplies       ReplyLike[]
+  likedMaterials     materialLike[]
+  level              Int              @default(100)
+  whatsApp           String?
+  coverImgUrl        String?
+  SavedTopics        SavedTopics[]
+  SavedMaterials     SavedMaterials[]
 }
 
-model Follows {
+model Follow {
   follower    User @relation("follower", fields: [followerId], references: [id])
   followerId  Int
   following   User @relation("following", fields: [followingId], references: [id])
@@ -49,76 +60,143 @@ enum Role {
 }
 
 model Topic {
-  id            Int        @id @default(autoincrement())
-  title         String
-  slug          String     @unique
-  content       String
-  createdDate   DateTime?  @default(now())
-  updatedDate   DateTime?  @default(now())
-  author        User       @relation("wrtten topics", fields: [authorId], references: [id])
-  authorId      Int
-  coverImageUrl String?
-  likes         Int?       @default(0)
-  viwes         Int?       @default(0)
-  followers     User[]
-  Category      Category?  @relation(fields: [categoryId], references: [id])
-  categoryId    Int?
-  comments      Comments[]
-  uploads       upload[]
+  id             Int              @id @default(autoincrement())
+  title          String
+  published      Boolean          @default(true)
+  pinned         Boolean          @default(false)
+  slug           String           @unique
+  content        String
+  createdDate    DateTime?        @default(now())
+  updatedDate    DateTime?        @default(now())
+  author         User             @relation("wrtten topics", fields: [authorId], references: [id])
+  authorId       Int
+  coverImageUrl  String?
+  viwes          Int?             @default(1)
+  followers      User[]
+  Category       Category?        @relation(fields: [categoryId], references: [id])
+  categoryId     Int?
+  comments       Comment[]
+  likes          Topiclike[]
+  savedTopics    SavedTopics[]
+  savedMaterials SavedMaterials[]
+  shareCount     Int?             @default(0)
+  upload         TopicUpload[]
 }
 
-model Comments {
-  id          Int        @id @default(autoincrement())
-  slug        String
-  content     String
-  Topic       Topic?     @relation(fields: [topicId], references: [id])
-  topicId     Int?
-  materials   Materials? @relation(fields: [materialsId], references: [id])
-  materialsId Int?
-  replys      Replys[]
+model TopicUpload {
+  id      Int     @id @default(autoincrement())
+  link    String
+  size    String?
+  name    String?
+  topic   Topic   @relation(fields: [topicId], references: [id])
+  topicId Int
 }
 
-model Replys {
-  id         Int       @id @default(autoincrement())
+model SavedTopics {
+  id           Int   @id @default(autoincrement())
+  userId       User  @relation(fields: [SavedUserId], references: [id])
+  SavedUserId  Int
+  topicId      Topic @relation(fields: [SavedTopicId], references: [id])
+  SavedTopicId Int
+}
+
+model Topiclike {
+  id           Int   @id @default(autoincrement())
+  userId       User  @relation(fields: [likeUserId], references: [id])
+  topicId      Topic @relation(fields: [likedTopicId], references: [id])
+  likedTopicId Int
+  likeUserId   Int
+}
+
+model Comment {
+  id           Int           @id @default(autoincrement())
+  slug         String
+  content      String
+  Topic        Topic?        @relation(fields: [topicId], references: [id])
+  topicId      Int?
+  materials    Material?     @relation(fields: [materialsId], references: [id])
+  materialsId  Int?
+  replys       Reply[]
+  CommentLikes CommentLike[]
+}
+
+model CommentLike {
+  id          Int     @id @default(autoincrement())
+  userId      User    @relation(fields: [likedUserId], references: [id])
+  commentId   Comment @relation(fields: [commentsId], references: [id])
+  likedUserId Int
+  commentsId  Int
+}
+
+model Reply {
+  id         Int         @id @default(autoincrement())
   slug       String
   content    String
-  Comments   Comments? @relation(fields: [commentsId], references: [id])
+  Comments   Comment?    @relation(fields: [commentsId], references: [id])
   commentsId Int?
+  ReplyLikes ReplyLike[]
 }
 
-model Materials {
-  id           Int          @id @default(autoincrement())
+model ReplyLike {
+  id         Int   @id @default(autoincrement())
+  userId     User  @relation(fields: [likeUserId], references: [id])
+  replyId    Reply @relation(fields: [replysId], references: [id])
+  likeUserId Int
+  replysId   Int
+}
+
+model Material {
+  id           Int            @id @default(autoincrement())
   title        String
-  slug         String       @unique
+  published    Boolean        @default(true)
+  pinned       Boolean        @default(false)
+  slug         String         @unique
   description  String
-  createdDate  DateTime?    @default(now())
-  updatedDate  DateTime?    @default(now())
-  author       User         @relation("wrttenMaterials", fields: [authorId], references: [id])
+  createdDate  DateTime?      @default(now())
+  updatedDate  DateTime?      @default(now())
+  author       User           @relation("wrttenMaterials", fields: [authorId], references: [id])
   authorId     Int
-  likes        Int?
-  viwes        Int?
-  comments     Comments[]
-  courseCode   CourseCode   @relation(fields: [courseCodeId], references: [id])
+  viwes        Int?           @default(0)
+  comments     Comment[]
+  courseCode   CourseCode     @relation(fields: [courseCodeId], references: [id])
   courseCodeId Int
   faculty      Faculty[]
   department   Department[]
+  materialLike materialLike[]
   uploads      upload[]
 }
 
+model SavedMaterials {
+  id           Int   @id @default(autoincrement())
+  userId       User  @relation(fields: [SavedUserId], references: [id])
+  SavedUserId  Int
+  topicId      Topic @relation(fields: [SavedTopicId], references: [id])
+  SavedTopicId Int
+}
+
+model materialLike {
+  id         Int      @id @default(autoincrement())
+  userId     User     @relation(fields: [likedUserId], references: [id])
+  materialId Material @relation(fields: [likedMaterialId], references: [id])
+
+  likedUserId     Int
+  likedMaterialId Int
+}
+
 model upload {
-  id          Int       @id @default(autoincrement())
-  link        String
-  materials   Materials @relation(fields: [materialsId], references: [id])
-  materialsId Int
-  topic       Topic     @relation(fields: [topicId], references: [id])
-  topicId     Int
+  id         Int       @id @default(autoincrement())
+  link       String
+  size       String?
+  name       String?
+  material   Material? @relation(fields: [materialId], references: [id])
+  materialId Int?
 }
 
 model CourseCode {
-  id        Int         @id @default(autoincrement())
-  name      String      @unique
-  slug      String      @unique
-  materials Materials[]
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  slug      String     @unique
+  materials Material[]
 }
 
 model Faculty {
@@ -126,8 +204,8 @@ model Faculty {
   name        String       @unique
   slug        String       @unique
   user        User[]
-  materials   Materials    @relation(fields: [materialsId], references: [id])
-  materialsId Int
+  materials   Material?    @relation(fields: [materialsId], references: [id])
+  materialsId Int?
   Departments Department[]
 }
 
@@ -136,15 +214,16 @@ model Department {
   name        String    @unique
   slug        String    @unique
   User        User[]
-  materials   Materials @relation(fields: [materialsId], references: [id])
-  materialsId Int
-  faculty     Faculty   @relation(fields: [facultyId], references: [id])
-  facultyId   Int
+  materials   Material? @relation(fields: [materialsId], references: [id])
+  materialsId Int?
+  faculty     Faculty?  @relation(fields: [facultyId], references: [id])
+  facultyId   Int?
 }
 
 model Category {
-  id     Int     @id @default(autoincrement())
-  title  String? @unique
-  slug   String?
-  topics Topic[]
+  id       Int     @id @default(autoincrement())
+  title    String? @unique
+  slug     String?
+  forAdmin Boolean
+  topics   Topic[]
 }

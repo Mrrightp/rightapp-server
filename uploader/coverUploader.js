@@ -7,11 +7,10 @@ const crypto = require('crypto');
 
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
-    const MonthtimeStamp = moment().format('MM');
     const yeartimeStamp = moment().format('YYYY');
 
     // console.log('time', req);
-    const path = `uploads/coverimg/${yeartimeStamp}/${MonthtimeStamp}`;
+    const path = `uploads/coverimg/${yeartimeStamp}`;
     fs.mkdirSync(path, { recursive: true }, function (err) {
       callback(err);
     });

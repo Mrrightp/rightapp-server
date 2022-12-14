@@ -31,7 +31,7 @@ app.use(
 app.use('/uploads', express.static('uploads'));
 app.use('/api/users', userRouter);
 app.use('/api/topics', topicRouter);
-app.use('/api/images', coverUploader);
+app.use('/api/image', coverUploader);
 
 app.use((req, res, next) => {
   next(createError.NotFound());

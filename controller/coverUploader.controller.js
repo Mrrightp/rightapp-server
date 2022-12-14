@@ -1,4 +1,5 @@
 function upload(req, res) {
+  console.log('rkf');
   if (req.file.filename) {
     res.status(201).json({
       success: 1,
